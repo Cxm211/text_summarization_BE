@@ -10,6 +10,9 @@ import re
 from time import time
 import spacy
 from spacy.cli.download import download
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+
 
 def text_strip(row):
     
@@ -61,21 +64,11 @@ def text_strip(row):
 
 def data_preprocess(raw_text):
     brief_cleaning = text_strip(raw_text)
-
+    print(brief_cleaning)
     download(model="en_core_web_sm")
-    nlp = spacy.load('en_core_web_sm', disable=['ner', 'parser']) # disabling Named Entity Recognition for speed
-
-    #Taking advantage of spaCy .pipe() method to speed-up the cleaning process:
-    #If data loss seems to be happening(i.e len(text) = 50 instead of 75 etc etc) in this cell , decrease the batch_size parametre 
-
-    t = time()
-
-    #Batch the data points into 5000 and run on all cores for faster preprocessing
-    text = [str(doc) for doc in nlp.pipe(brief_cleaning, batch_size=5000, n_threads=-1)]
-
-    #Takes 7-8 mins
-    print('Time to clean up everything: {} mins'.format(round((time() - t) / 60, 2)))
-    return brief_cleaning
+    nlp = spacy.load('en_core_web_sm', disable=['ner', 'parser']) 
+    text = [str(doc) for doc in nlp.pipe(brief_cleaning, batch_size=5000)]
+    return text
 
 class TextInstanceGetView(GenericAPIView):
    # permission_classes = (IsAuthenticated,)
@@ -139,7 +132,7 @@ class TextUpdateView(GenericAPIView):
             print('error', serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-
+@method_decorator(csrf_exempt, name='dispatch')
 class InputView(GenericAPIView):
     serializer_class = InputSerializer
 
@@ -148,13 +141,17 @@ class InputView(GenericAPIView):
         if serializer.is_valid():
             raw_text = serializer.data['raw_text']
             # perform AI 
+            print(raw_text)
+            preprecessed_data = data_preprocess(raw_text)
+            print(preprecessed_data)
             summary = 'haha'
             lable_list = ['happy']
             lable = ' '.join(str(e) for e in lable_list)
             data = {
                 "raw_text": raw_text,
                 "summary": summary,
-                "labels": lable
+                "labels": lable,
+                "preprocessed_data":' '
             }
             text_serializer = TextSerializer(data = data)
             if text_serializer.is_valid():

@@ -2,9 +2,8 @@ import re
 from time import time
 import spacy
 from spacy.cli.download import download
-def text_strip(row):
-    
-        
+
+def text_strip(row): 
         #ORDER OF REGEX IS VERY VERY IMPORTANT!!!!!!
         
         row=re.sub("(\\t)", ' ', str(row)).lower() #remove escape charecters
@@ -31,41 +30,23 @@ def text_strip(row):
         
         row=re.sub("(\s+.\s+)", ' ', str(row)).lower() #remove any single charecters hanging between 2 spaces
         
-        #Replace any url as such https://abc.xyz.net/browse/sdf-5327 ====> abc.xyz.net
         try:
             url = re.search(r'((https*:\/*)([^\/\s]+))(.[^\s]+)', str(row))
             repl_url = url.group(3)
             row = re.sub(r'((https*:\/*)([^\/\s]+))(.[^\s]+)',repl_url, str(row))
         except:
             pass #there might be emails with no url in them
-        
-
-        
         row = re.sub("(\s+)",' ',str(row)).lower() #remove multiple spaces
-        
-        #Should always be last
         row=re.sub("(\s+.\s+)", ' ', str(row)).lower() #remove any single charecters hanging between 2 spaces
 
-        
-        
-        return row
+        yield row
 
 def data_preprocess(raw_text):
     brief_cleaning = text_strip(raw_text)
-
+    print(brief_cleaning)
     download(model="en_core_web_sm")
-    nlp = spacy.load('en_core_web_sm', disable=['ner', 'parser']) # disabling Named Entity Recognition for speed
+    nlp = spacy.load('en_core_web_sm', disable=['ner', 'parser']) 
+    text = [str(doc) for doc in nlp.pipe(brief_cleaning, batch_size=5000)]
+    return text
 
-    #Taking advantage of spaCy .pipe() method to speed-up the cleaning process:
-    #If data loss seems to be happening(i.e len(text) = 50 instead of 75 etc etc) in this cell , decrease the batch_size parametre 
-
-    t = time()
-
-    #Batch the data points into 5000 and run on all cores for faster preprocessing
-    text = [str(doc) for doc in nlp.pipe(brief_cleaning, batch_size=5000, n_threads=-1)]
-
-    #Takes 7-8 mins
-    print('Time to clean up everything: {} mins'.format(round((time() - t) / 60, 2)))
-    return brief_cleaning
-
-print(data_preprocess("HDAISD____ISHDA iashdiashdiashd  \n asdajsidjai\s sjdiaisd s oas dsd+sdjio2@#"))
+print(data_preprocess("Lashkar-e-Taiba's Kashmir commander Abu Dujana, who was killed by security forces, said ""Kabhi hum aage, kabhi aap, aaj aapne pakad liya, mubarak ho aapko (Today you caught me. Congratulations)"" after being caught. He added that he won't surrender, and whatever is in his fate will happen to him. ""Hum nikley they shaheed hone (had left home for martyrdom),"" he added.\",\"Lashkar-e-Taiba's Kashmir commander Abu Dujana was killed in an encounter in a village in Pulwama district of Jammu and Kashmir earlier this week. Dujana, who had managed to give the security forces a slip several times in the past, carried a bounty of Rs 15 lakh on his head.Reports say that Dujana had come to meet his wife when he was trapped inside a house in Hakripora village. Security officials involved in the encounter tried their best to convince Dujana to surrender but he refused, reports say.According to reports, Dujana rejected call for surrender from an Army officer. The Army had commissioned a local to start a telephonic conversation with Dujana. After initiating the talk, the local villager handed over the phone to the army officer.""Kya haal hai? Maine kaha, kya haal hai (How are you. I asked, how are you)?"" Dujana is heard asking the officer. The officer replies: ""Humara haal chhor Dujana. Surrender kyun nahi kar deta. Tu galat kar rha hai (Why don't you surrender? You have married this girl. What you are doing isn't right.)""When told that he is being used by Pakistani agencies as a pawn, Dujana, who sounded calm and unperturbed of the situation, said ""Hum nikley they shaheed hone. Main kya karu. Jisko game khelna hai, khelo. Kabhi hum aage, kabhi aap, aaj aapne pakad liya, mubarak ho aapko. Jisko jo karna hai karlo (I had left home for martyrdom. What can I do? Today you caught me. Congratulations. ""Surrender nahi kar sakta. Jo meri kismat may likha hoga, Allah wahi karega, theek hai? (I won't surrender. Allaah would do whatever is there in my fate)"" Dujana went on to say. Dujana, who belonged to Pakistan, was Lashkar-e-Taiba's divisional commander in south Kashmir. He was among the top 10 terrorists identified by the Indian Army in Jammu and Kashmir.With a Rs 15 lakh bounty on his head, Dujana was labelled an 'A++' terrorist - the top grade which was also given to Burhan Wani.Security forces received inputs that during the last few days he was frequenting the houses of his wife Rukaiya and girlfriend Shazia. Police was keeping a watch on both the houses. when it was confirmed he was present in his wife's house, security forces moved in to trap him.ALSO READ:After Abu Dujana, security forces prepare new hitlist of most wanted terroristsAbu Dujana encounter: Jilted lover turned police informer led security forces to LeT commander"))
