@@ -10,3 +10,6 @@ gmpy2==2.0.8
 itypes==1.2.0
 pandas==1.3.4
 pipenv==2022.5.2
+pyyaml 
+h5py
+tensorflow

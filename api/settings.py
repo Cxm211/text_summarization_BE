@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     'import_export', 
     'rest_framework_swagger',
 
-
 ]
 REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema' }
 
